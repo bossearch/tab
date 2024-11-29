@@ -3,9 +3,9 @@ import './style.css';
 (function() {
 // Default config
 let CONFIG = {
-  defaultCommand: 'g',
-  bgColor: '#282828',
-  textColor: '#ebdbb2',
+  defaultCommand: 'dg',
+  bgColor: '#1a1b26',
+  textColor: '#f7768e',
   fontSize: '1.75em',
   clockSize: '2em',
   showClock: false,
@@ -18,8 +18,6 @@ let CONFIG = {
 const DEFAULT_CONFIG = Object.assign({}, CONFIG);
 let aliases = {
 // alias: command
-  'cal': 'gc',
-  'gk': 'k',
   'ddg': 'dg',
   '?': 'help'
 }
@@ -55,7 +53,7 @@ function evaluateInput() {
   lastEnteredCommand = input;
 
   // Format input
-  let args = input.split(';');
+  let args = input.split('/');
   let command = args[0].toLowerCase();
   for (let i=0; i < args.length; i++) {
     args[i] = args[i].trim();
@@ -361,7 +359,7 @@ const commands = {
           displayMessage('Error: invalid hex value', 5000);
         }
         break;
-        
+
       case 'caretColor':
         // Display current setting
         if (args.length === 1) {
@@ -459,7 +457,7 @@ const commands = {
   'link': (args) => {
     switch(args.length) {
       case 0:
-        displayMessage(`link is a builtin command<br>To search for "link" try g;link<br>`, 8000);
+        displayMessage(`link is a builtin command<br>To search for "link" try dg/link<br>`, 8000);
         break;
 
       case 1:
@@ -683,15 +681,27 @@ const commands = {
   },
 
   // Youtube
-  'y': (args) => {
+  'yt': (args) => {
     const url = 'https://youtube.com', search = '/results?search_query=';
     if (args.length == 0) {
       redirect(url);
     } else {
-      if (['subs', 's'].includes(args[0]))
-        redirect(url + '/feed/subscriptions');
-      else
-        redirect(buildURL(url, search, args[0]));
+      switch (args[0]) {
+        case 'subs':
+          redirect(url + '/feed/subscriptions');
+          break;
+        case 'hist':
+          redirect(url + '/feed/history');
+          break;
+        case 'save':
+          redirect(url + '/feed/playlist');
+          break;
+        case 'wl':
+          redirect(url + '/playlist?list=WL');
+          break;
+        default:
+          redirect(buildURL(url, search, args[0]));
+      }
     }
   },
 
@@ -704,9 +714,14 @@ const commands = {
 
   // GitHub
   'gh': (args) => {
-    const url = 'https://github.com', search = '/';
-    if (args.length == 0) redirect(url)
-    else redirect(url + search + args.join(''));
+    const baseUrl = 'https://github.com';
+    if (args.length === 0) {
+      redirect(baseUrl);
+    } else if (args.length === 2) {
+      redirect(`${baseUrl}/${args[0]}/${args[1]}/`);
+    } else {
+      redirect(`${baseUrl}/${args[0]}/`);
+    }
   },
 
   // GitHub Gist
@@ -717,7 +732,7 @@ const commands = {
   },
 
   // Wolfram Alpha
-  'wa': (args) => {
+  'wolf': (args) => {
     const url = 'http://wolframalpha.com', search = '/input/?i=';
     if (args.length == 0) redirect(url)
     else redirect(buildURL(url, search, args.join(' ')));
@@ -738,48 +753,41 @@ const commands = {
   },
 
   // Google Maps
-  'map': (args) => {
+  'gmap': (args) => {
     const url = 'https://google.com/maps', search = '/search/';
     if (args.length == 0) redirect(url)
     else redirect(buildURL(url, search, args.join(' ')));
   },
 
   // Google Drive
-  'gd': (args) => {
+  'gdrive': (args) => {
     const url = 'https://drive.google.com', search = '/drive/search?q=';
     if (args.length == 0) redirect(url)
     else redirect(buildURL(url, search, args.join(' ')));
   },
 
   // Google Calendar
-  'gc': (args) => {
+  'gcal': (args) => {
     redirect('https://calendar.google.com');
   },
 
   // Google Images
-  'img': (args) => {
+  'gimg': (args) => {
     const url = 'https://google.com', search = '/search?tbm=isch&q=';
     if (args.length == 0) redirect(url)
     else redirect(buildURL(url, search, args.join(' ')));
   },
 
   // Gmail
-  'gm': (args) => {
+  'gmail': (args) => {
     const url = 'https://mail.google.com', search = '/mail/u/0/#search/';
     if (args.length == 0) redirect(url)
     else redirect(buildURL(url, search, args.join(' ')));
   },
 
   // Google Keep
-  'k': (args) => {
+  'gkeep': (args) => {
     const url = 'https://keep.google.com', search = '/#search/text=';
-    if (args.length == 0) redirect(url)
-    else redirect(buildURL(url, search, args.join(' ')));
-  },
-
-  // Trello
-  'tr': (args) => {
-    const url = 'https://trello.com', search = '/search?q=';
     if (args.length == 0) redirect(url)
     else redirect(buildURL(url, search, args.join(' ')));
   },
@@ -798,39 +806,108 @@ const commands = {
     else redirect(buildURL(url, search, args.join(' ')));
   },
 
-  // Amazon
-  'a': (args) => {
-    const url = 'https://amazon.com', search = '/s/?field-keywords=';
+  // Tokopedia
+  'tokped': (args) => {
+    const url = 'https://tokopedia.com', search = '/search?q=';
+    if (args.length == 0) {
+      redirect(url);
+    } else {
+      switch (args[0]) {
+        case 'wish':
+          redirect(url + '/wishlist');
+          break;
+        case 'cart':
+          redirect(url + '/cart');
+          break;
+        case 'chat':
+          redirect(url + '/chat');
+          break;
+        case 'order':
+          redirect(url + '/order-list');
+          break;
+        default:
+          redirect(buildURL(url, search, args[0]));
+      }
+    }
+  },
+
+  // QMK
+  'qmk': (args) => {
+    if (args.length == 0) {
+      redirect('https://github.com/qmk/qmk_firmware');
+    } else {
+      switch (args[0]) {
+        case 'wiki':
+          redirect('https://docs.qmk.fm/');
+          break;
+        case 'conf':
+          redirect('https://config.qmk.fm/#/crkbd/rev1/LAYOUT_split_3x6_3');
+          break;
+      }
+    }
+  },
+
+  // Deepl
+  'dpl': (args) => {
+    const baseUrl = 'https://www.deepl.com/en/translator';
+    if (args.length === 0) {
+      redirect(baseUrl);
+    } else if (args.length === 1) {
+      redirect(`${baseUrl}#${args[0]}/`);
+    } else if (args.length === 2) {
+      redirect(`${baseUrl}#${args[0]}/${args[1]}/`);
+    } else {
+      redirect(`${baseUrl}#${args[0]}/${args[1]}/`);
+    }
+  },
+
+  // Twitter
+  'x': (args) => {
+    const url = 'https://x.com', search = '/search?q=';
     if (args.length == 0) redirect(url)
     else redirect(buildURL(url, search, args.join(' ')));
   },
 
-  // Node package manager
-  'npm': (args) => {
-    const url = 'https://npmjs.org', search = '/search?q=';
+  // Idlix
+  'idlix': (args) => {
+    const url = 'https://tv3.idlix.asia', search = '/search/';
     if (args.length == 0) redirect(url)
     else redirect(buildURL(url, search, args.join(' ')));
   },
 
-  // Python package index
-  'pypi': (args) => {
-    const url = 'https://pypi.org', search = '/search/?q=';
-    if (args.length == 0) redirect(url)
-    else redirect(buildURL(url, search, args.join(' ')));
+  // ChatGPT
+  'gpt': (args) => {
+    redirect('https://chatgpt.com');
   },
 
-  // Stack Overflow
-  'so': (args) => {
-    const url = 'https://stackoverflow.com', search = '/search?q=';
-    if (args.length == 0) redirect(url)
-    else redirect(buildURL(url, search, args.join(' ')));
+  // Blackbox
+  'bb': (args) => {
+    redirect('https://blackbox.ai');
   },
 
-  // MDN web docs
-  'mdn': (args) => {
-    const url = 'https://developer.mozilla.org', search = '/search?q=';
-    if (args.length ==0) redirect(url)
-    else redirect(buildURL(url, search, args.join(' ')))
+  // Proton Mail
+  'pmail': (args) => {
+    redirect('https://mail.proton.me/u/0/inbox');
+  },
+
+  // Proton Calendar
+  'pcal': (args) => {
+    redirect('https://calendar.proton.me');
+  },
+
+  // Proton Pass
+  'pass': (args) => {
+    redirect('https://pass.proton.me');
+  },
+
+  // Proton Drive
+  'pdrive': (args) => {
+    redirect('https://drive.proton.me');
+  },
+
+  // Twitch
+  'tw': (args) => {
+    redirect('https://www.twitch.tv/');
   }
 }
 })() // closure
